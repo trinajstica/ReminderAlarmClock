@@ -38,6 +38,9 @@ class ReminderAlarmClock extends PanelMenu.Button {
 
         this.extension = extension;
         this.ResetLabel = _('R');
+        this.ToggleLabel = '±';
+        this.subtractMode = false;
+        this.numberButtons = [];
 
         this.icon = new St.Icon({ style_class: 'system-status-icon' });
         this.label = new St.Label({
@@ -128,21 +131,19 @@ class ReminderAlarmClock extends PanelMenu.Button {
     }
 
     _makeUi(labels) {
-        let oneBox = new St.BoxLayout({ vertical: false });
-        oneBox.add_child(this._makeButtonsColon([labels[2], labels[3]]));
-        oneBox.add_child(this._makeButtonsColon([labels[4], labels[5]]));
+        let topRow = new St.BoxLayout({ vertical: false });
+        topRow.add_child(this.timeLabel);
+        topRow.add_child(this._createButton(this.ResetLabel));
+        topRow.add_child(this._createButton(this.ToggleLabel));
 
-        let twoBox = new St.BoxLayout({ vertical: true });
-        twoBox.add_child(this.timeLabel);
-        twoBox.add_child(oneBox);
-
-        let threeBox = new St.BoxLayout({ vertical: false });
-        threeBox.add_child(twoBox);
-        threeBox.add_child(
-            this._makeButtonsColon([this.ResetLabel, labels[0], labels[1]]));
+        let buttonGrid = new St.BoxLayout({ vertical: false });
+        buttonGrid.add_child(this._makeButtonsColon([labels[2], labels[3]]));
+        buttonGrid.add_child(this._makeButtonsColon([labels[4], labels[5]]));
+        buttonGrid.add_child(this._makeButtonsColon([labels[0], labels[1]]));
 
         let mainBox = new St.BoxLayout({ vertical: true });
-        mainBox.add_child(threeBox);
+        mainBox.add_child(topRow);
+        mainBox.add_child(buttonGrid);
         mainBox.add_child(this.messageEntry);
 
         return mainBox;
@@ -171,6 +172,9 @@ class ReminderAlarmClock extends PanelMenu.Button {
             if (button.label == this.ResetLabel) {
                 this._resetAlarm();
             }
+            else if (label == this.ToggleLabel) {
+                this._toggleSubtractMode();
+            }
             else {
                 let integer = parseInt(button.label, 10);
                 let minutes = isNaN(integer) ? 0 : integer;
@@ -178,7 +182,20 @@ class ReminderAlarmClock extends PanelMenu.Button {
             }
         });
 
+        if (label !== this.ResetLabel && label !== this.ToggleLabel) {
+            this.numberButtons.push(button);
+        }
+
         return button;
+    }
+
+    _toggleSubtractMode() {
+        this.subtractMode = !this.subtractMode;
+        this.numberButtons.forEach(btn => {
+            btn.label = this.subtractMode
+                ? btn.label.replace('+', '-')
+                : btn.label.replace('-', '+');
+        });
     }
 
     _startAlarm(minutes) {
